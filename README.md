@@ -1,5 +1,3 @@
-# Implementation of Boosting Domain Adaptation by Discovering Latent Domains
-
 This is the official Caffe implementation of [Boosting Domain Adaptation by Discovering Latent Domains](http://research.mapillary.com/img/publications/CVPR18b.pdf). 
 
 This code is forked from [BVLC/caffe](https://github.com/BVLC/caffe). For any issue not directly related to our additional layers, please refer to the upstream repository.
