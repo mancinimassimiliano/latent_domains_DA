@@ -1,0 +1,23 @@
+net: "%NETWORK%"
+
+# Testing
+test_iter: %TEST_ITER%
+test_interval: %TEST_INTERVAL%
+
+# Schedule
+base_lr: 0.0005
+lr_policy: "step"
+
+stepsize: %STEP%
+max_iter: %MAX_ITER%
+gamma: 0.1
+
+# Solver
+momentum: 0.9
+weight_decay: 0.000001
+iter_size: 2
+# Visualization
+display: 20
+snapshot: 0
+snapshot_prefix: "%SNAPSHOT%"
+solver_mode: GPU

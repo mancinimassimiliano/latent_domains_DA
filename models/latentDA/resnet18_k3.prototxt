@@ -1,0 +1,4698 @@
+layer {
+  name: "data-source1"
+  type: "ImageData"
+  top: "data-source1"
+  top: "labels-source1"
+  include {
+    phase: TRAIN
+  }
+  transform_param {
+    crop_size: 224
+    mirror: true
+    mean_value: 104
+    mean_value: 117
+    mean_value: 123
+
+  }
+  image_data_param {
+    batch_size: %SOURCE_BS1%
+    source: "%SOURCE_LIST1%"
+    shuffle: true
+    is_color: true
+    new_height: 256
+    new_width: 256
+  
+  }
+}
+
+layer {
+  name: "data-source2"
+  type: "ImageData"
+  top: "data-source2"
+  top: "labels-source2"
+  include {
+    phase: TRAIN
+  }
+  transform_param {
+    crop_size: 224
+    mirror: true
+    mean_value: 104
+    mean_value: 117
+    mean_value: 123
+
+  }
+  image_data_param {
+    batch_size: %SOURCE_BS2%
+    source: "%SOURCE_LIST2%"
+    shuffle: true
+    is_color: true
+    new_height: 256
+    new_width: 256
+  
+  }
+}
+
+
+layer {
+  name: "data-source3"
+  type: "ImageData"
+  top: "data-source3"
+  top: "labels-source3"
+  include {
+    phase: TRAIN
+  }
+  transform_param {
+    crop_size: 224
+    mirror: true
+    mean_value: 104
+    mean_value: 117
+    mean_value: 123
+
+  }
+  image_data_param {
+    batch_size: %SOURCE_BS3%
+    source: "%SOURCE_LIST3%"
+    shuffle: true
+    is_color: true
+    new_height: 256
+    new_width: 256
+  
+  }
+}
+layer {
+  name: "data-4"
+  type: "ImageData"
+  top: "data-target"
+  top: "labels-target"
+  include {
+    phase: TRAIN
+  }
+  transform_param {
+   crop_size: 224
+    mirror: true
+    mean_value: 104
+    mean_value: 117
+    mean_value: 123
+
+  }
+  image_data_param {
+    batch_size: %TARGET_BS%
+    source: "%TARGET_LIST%"
+    shuffle: true
+    is_color: true
+    new_height: 256
+    new_width: 256
+  
+  }
+}
+
+
+layer {
+  name: "data"
+  type: "ImageData"
+  top: "data"
+  top: "labels"
+  include {
+    phase: TEST
+  }
+  transform_param {
+   crop_size: 224
+    mirror: true
+    mean_value: 104
+    mean_value: 117
+    mean_value: 123
+
+  }
+  image_data_param {
+    batch_size: %TEST_BS%
+    source: "%TEST_LIST%"
+    shuffle: true
+    is_color: true
+    new_height: 256
+    new_width: 256
+  
+  }
+}
+
+layer{
+	name: "data-concat"
+	type: "Concat"
+	bottom: "data-source1"
+	bottom: "data-source2"
+	bottom: "data-source3"
+	bottom: "data-target"
+	top: "data"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "labels-concat"
+	type: "Concat"
+	bottom: "labels-source1"
+	bottom: "labels-source2"
+	bottom: "labels-source3"
+	top: "labels"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer {
+  	name: "silence-labels-target"
+  	type: "Silence"
+  	bottom: "labels-target"
+	include {
+		phase: TRAIN
+	}
+}
+
+
+layer{
+	name: "conv1"
+	type: "Convolution"
+	bottom: "data"
+	top: "conv1"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 64
+		bias_term: false
+		pad: 3
+		kernel_size: 7
+		stride: 2
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "bn_conv1"
+	type: "BatchNorm"
+	bottom: "conv1"
+	top: "conv1"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "scale_conv1"
+	type: "Scale"
+	bottom: "conv1"
+	top: "conv1"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "conv1_relu"
+	type: "ReLU"
+	bottom: "conv1"
+	top: "conv1"
+}
+
+layer{
+	name: "pool1"
+	type: "Pooling"
+	bottom: "conv1"
+	top: "pool1"
+	pooling_param {
+		pool: MAX
+		kernel_size: 3
+		stride: 2
+		pad: 0
+    	}
+}
+
+layer{
+	name: "res2a_wl_source_branch2a"
+	type: "Convolution"
+	bottom: "conv1"
+	top: "res2a_wl_source_branch2a"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	convolution_param {
+		num_output: 64
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 2
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "bn2a_wl_source_branch2a"
+	type: "BatchNorm"
+	bottom: "res2a_wl_source_branch2a"
+	top: "res2a_wl_source_branch2a_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "scale2a_wl_source_branch2a"
+	type: "Scale"
+	bottom: "res2a_wl_source_branch2a_bn"
+	top: "res2a_wl_source_branch2a_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res2a_wl_source_branch2a_relu"
+	type: "ReLU"
+	bottom: "res2a_wl_source_branch2a_bn"
+	top: "res2a_wl_source_branch2a_bn"
+	include {
+		phase: TRAIN
+	}
+}
+
+layer{
+	name: "res2a_wl_source_branch2b"
+	type: "Convolution"
+	bottom: "res2a_wl_source_branch2a_bn"
+	top: "res2a_wl_source_branch2b"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	convolution_param {
+		num_output: 64
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 1
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "bn2a_wl_source_branch2b"
+	type: "BatchNorm"
+	bottom: "res2a_wl_source_branch2b"
+	top: "res2a_wl_source_branch2b_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "scale2a_wl_source_branch2b"
+	type: "Scale"
+	bottom: "res2a_wl_source_branch2b_bn"
+	top: "res2a_wl_source_branch2b_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res2a_wl_source_branch1"
+	type: "Convolution"
+	bottom: "conv1"
+	top: "res2a_wl_source_branch1"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	convolution_param {
+		num_output: 64
+		bias_term: false
+		pad: 0
+		kernel_size: 1
+		stride: 2
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "bn2a_wl_source_branch1"
+	type: "BatchNorm"
+	bottom: "res2a_wl_source_branch1"
+	top: "res2a_wl_source_branch1_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "scale2a_wl_source_branch1"
+	type: "Scale"
+	bottom: "res2a_wl_source_branch1_bn"
+	top: "res2a_wl_source_branch1_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res2a_wl_source"
+	type: "Eltwise"
+	bottom: "res2a_wl_source_branch2b_bn"
+	bottom: "res2a_wl_source_branch1_bn"
+	top: "res2a_wl_source"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "res2a_wl_source_relu"
+	type: "ReLU"
+	bottom: "res2a_wl_source"
+	top: "res2a_wl_source"
+	include {
+		phase: TRAIN
+	}
+}
+
+layer{
+	name: "w_relus"
+	type: "ReLU"
+	bottom: "res2a_wl_source"
+	top: "res2a_wl_source_r1s"
+	include {
+		phase: TRAIN
+	}
+}
+
+layer{
+	name: "w_glbs"
+	type: "Pooling"
+	bottom: "res2a_wl_source_r1s"
+	top: "res2a_wl_source_glbs"
+	include {
+		phase: TRAIN
+	}
+	pooling_param {
+		pool: AVE
+		global_pooling: true
+    	}
+}
+
+layer{
+	name: "slice_assignment"
+	type: "Slice"
+	bottom: "res2a_wl_source_glbs"
+	top: "res2a_wl_source_glbs_source"
+	top: "res2a_wl_source_glbs_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "predictor-source"
+	type: "InnerProduct"
+	bottom: "res2a_wl_source_glbs_source"
+	top: "w_score_source"
+	param {
+		name: "wpredictor-source"
+		lr_mult: 10.0
+		decay_mult: 1.0
+ 	}
+	param {
+		name: "bpredictor-source"
+		lr_mult: 20.0
+		decay_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	inner_product_param {
+		num_output: 3
+		weight_filler {
+      	type: "gaussian"
+      			std: 0.01
+    		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0.0
+    		}
+  	}
+}
+
+layer {
+  	name: "silence_res2a_wl_source_glbs_target"
+  	type: "Silence"
+  	bottom: "res2a_wl_source_glbs_target"
+	include {
+		phase: TRAIN
+	}
+}layer{
+	name: "entropy_w-source"
+	type: "EntropyLoss"
+	bottom: "w_score_source"
+	top: "entropy_w-source"
+	loss_weight: %DOMAIN_ENTROPY_WEIGHT%
+	include {
+		phase: TRAIN
+	}
+}
+
+
+layer{
+	name: "w_soft-source"
+	type: "Softmax"
+	bottom: "w_score_source"
+	top: "w-source"
+	include {
+		phase: TRAIN
+	}
+	softmax_param {
+		axis: 1
+  	}
+}
+
+
+
+layer{
+	name: "w_slicers"
+	type: "Slice"
+	bottom: "w-source"
+	top: "ws1"
+	top: "ws2"
+	top: "ws3"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 1
+	}
+}
+
+layer{
+	name: "res2a_branch2a"
+	type: "Convolution"
+	bottom: "pool1"
+	top: "res2a_branch2a"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 64
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 1
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res2a_branch2a"
+	type: "Slice"
+	bottom: "res2a_branch2a"
+	top: "res2a_branch2a_source"
+	top: "res2a_branch2a_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn2a_branch2as1"
+	type: "MultiModalBatchNorm"
+	bottom: "res2a_branch2a_source"
+	bottom: "ws1"
+	top: "res2a_branch2a_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn2a_branch2as2"
+	type: "MultiModalBatchNorm"
+	bottom: "res2a_branch2a_source"
+	bottom: "ws2"
+	top: "res2a_branch2a_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn2a_branch2as3"
+	type: "MultiModalBatchNorm"
+	bottom: "res2a_branch2a_source"
+	bottom: "ws3"
+	top: "res2a_branch2a_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn2a_branch2a_sum_source"
+	type: "Eltwise"
+	bottom: "res2a_branch2a_bns1"
+	bottom: "res2a_branch2a_bns2"
+	bottom: "res2a_branch2a_bns3"
+	top: "res2a_branch2a_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn2a_branch2a"
+	type: "BatchNorm"
+	bottom: "res2a_branch2a_target"
+	top: "res2a_branch2a_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn2a_branch2a"
+	type: "BatchNorm"
+	bottom: "res2a_branch2a"
+	top: "res2a_branch2a_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn2a_branch2a"
+	type: "Concat"
+	bottom: "res2a_branch2a_bns"
+	bottom: "res2a_branch2a_bnt"
+	top: "res2a_branch2a_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale2a_branch2a"
+	type: "Scale"
+	bottom: "res2a_branch2a_bn"
+	top: "res2a_branch2a_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res2a_branch2a_relu"
+	type: "ReLU"
+	bottom: "res2a_branch2a_bn"
+	top: "res2a_branch2a_bn"
+}
+
+layer{
+	name: "res2a_branch2b"
+	type: "Convolution"
+	bottom: "res2a_branch2a_bn"
+	top: "res2a_branch2b"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 64
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 1
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res2a_branch2b"
+	type: "Slice"
+	bottom: "res2a_branch2b"
+	top: "res2a_branch2b_source"
+	top: "res2a_branch2b_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn2a_branch2bs1"
+	type: "MultiModalBatchNorm"
+	bottom: "res2a_branch2b_source"
+	bottom: "ws1"
+	top: "res2a_branch2b_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn2a_branch2bs2"
+	type: "MultiModalBatchNorm"
+	bottom: "res2a_branch2b_source"
+	bottom: "ws2"
+	top: "res2a_branch2b_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn2a_branch2bs3"
+	type: "MultiModalBatchNorm"
+	bottom: "res2a_branch2b_source"
+	bottom: "ws3"
+	top: "res2a_branch2b_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn2a_branch2b_sum_source"
+	type: "Eltwise"
+	bottom: "res2a_branch2b_bns1"
+	bottom: "res2a_branch2b_bns2"
+	bottom: "res2a_branch2b_bns3"
+	top: "res2a_branch2b_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn2a_branch2b"
+	type: "BatchNorm"
+	bottom: "res2a_branch2b_target"
+	top: "res2a_branch2b_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn2a_branch2b"
+	type: "BatchNorm"
+	bottom: "res2a_branch2b"
+	top: "res2a_branch2b_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn2a_branch2b"
+	type: "Concat"
+	bottom: "res2a_branch2b_bns"
+	bottom: "res2a_branch2b_bnt"
+	top: "res2a_branch2b_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale2a_branch2b"
+	type: "Scale"
+	bottom: "res2a_branch2b_bn"
+	top: "res2a_branch2b_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res2a_branch1"
+	type: "Convolution"
+	bottom: "pool1"
+	top: "res2a_branch1"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 64
+		bias_term: false
+		pad: 0
+		kernel_size: 1
+		stride: 1
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res2a_branch1"
+	type: "Slice"
+	bottom: "res2a_branch1"
+	top: "res2a_branch1_source"
+	top: "res2a_branch1_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn2a_branch1s1"
+	type: "MultiModalBatchNorm"
+	bottom: "res2a_branch1_source"
+	bottom: "ws1"
+	top: "res2a_branch1_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn2a_branch1s2"
+	type: "MultiModalBatchNorm"
+	bottom: "res2a_branch1_source"
+	bottom: "ws2"
+	top: "res2a_branch1_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn2a_branch1s3"
+	type: "MultiModalBatchNorm"
+	bottom: "res2a_branch1_source"
+	bottom: "ws3"
+	top: "res2a_branch1_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn2a_branch1_sum_source"
+	type: "Eltwise"
+	bottom: "res2a_branch1_bns1"
+	bottom: "res2a_branch1_bns2"
+	bottom: "res2a_branch1_bns3"
+	top: "res2a_branch1_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn2a_branch1"
+	type: "BatchNorm"
+	bottom: "res2a_branch1_target"
+	top: "res2a_branch1_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn2a_branch1"
+	type: "BatchNorm"
+	bottom: "res2a_branch1"
+	top: "res2a_branch1_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn2a_branch1"
+	type: "Concat"
+	bottom: "res2a_branch1_bns"
+	bottom: "res2a_branch1_bnt"
+	top: "res2a_branch1_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale2a_branch1"
+	type: "Scale"
+	bottom: "res2a_branch1_bn"
+	top: "res2a_branch1_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res2a"
+	type: "Eltwise"
+	bottom: "res2a_branch2b_bn"
+	bottom: "res2a_branch1_bn"
+	top: "res2a"
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "res2a_relu"
+	type: "ReLU"
+	bottom: "res2a"
+	top: "res2a"
+}
+
+layer{
+	name: "res2b_branch2a"
+	type: "Convolution"
+	bottom: "res2a"
+	top: "res2b_branch2a"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 64
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 1
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res2b_branch2a"
+	type: "Slice"
+	bottom: "res2b_branch2a"
+	top: "res2b_branch2a_source"
+	top: "res2b_branch2a_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn2b_branch2as1"
+	type: "MultiModalBatchNorm"
+	bottom: "res2b_branch2a_source"
+	bottom: "ws1"
+	top: "res2b_branch2a_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn2b_branch2as2"
+	type: "MultiModalBatchNorm"
+	bottom: "res2b_branch2a_source"
+	bottom: "ws2"
+	top: "res2b_branch2a_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn2b_branch2as3"
+	type: "MultiModalBatchNorm"
+	bottom: "res2b_branch2a_source"
+	bottom: "ws3"
+	top: "res2b_branch2a_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn2b_branch2a_sum_source"
+	type: "Eltwise"
+	bottom: "res2b_branch2a_bns1"
+	bottom: "res2b_branch2a_bns2"
+	bottom: "res2b_branch2a_bns3"
+	top: "res2b_branch2a_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn2b_branch2a"
+	type: "BatchNorm"
+	bottom: "res2b_branch2a_target"
+	top: "res2b_branch2a_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn2b_branch2a"
+	type: "BatchNorm"
+	bottom: "res2b_branch2a"
+	top: "res2b_branch2a_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn2b_branch2a"
+	type: "Concat"
+	bottom: "res2b_branch2a_bns"
+	bottom: "res2b_branch2a_bnt"
+	top: "res2b_branch2a_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale2b_branch2a"
+	type: "Scale"
+	bottom: "res2b_branch2a_bn"
+	top: "res2b_branch2a_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res2b_branch2a_relu"
+	type: "ReLU"
+	bottom: "res2b_branch2a_bn"
+	top: "res2b_branch2a_bn"
+}
+
+layer{
+	name: "res2b_branch2b"
+	type: "Convolution"
+	bottom: "res2b_branch2a_bn"
+	top: "res2b_branch2b"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 64
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 1
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res2b_branch2b"
+	type: "Slice"
+	bottom: "res2b_branch2b"
+	top: "res2b_branch2b_source"
+	top: "res2b_branch2b_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn2b_branch2bs1"
+	type: "MultiModalBatchNorm"
+	bottom: "res2b_branch2b_source"
+	bottom: "ws1"
+	top: "res2b_branch2b_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn2b_branch2bs2"
+	type: "MultiModalBatchNorm"
+	bottom: "res2b_branch2b_source"
+	bottom: "ws2"
+	top: "res2b_branch2b_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn2b_branch2bs3"
+	type: "MultiModalBatchNorm"
+	bottom: "res2b_branch2b_source"
+	bottom: "ws3"
+	top: "res2b_branch2b_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn2b_branch2b_sum_source"
+	type: "Eltwise"
+	bottom: "res2b_branch2b_bns1"
+	bottom: "res2b_branch2b_bns2"
+	bottom: "res2b_branch2b_bns3"
+	top: "res2b_branch2b_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn2b_branch2b"
+	type: "BatchNorm"
+	bottom: "res2b_branch2b_target"
+	top: "res2b_branch2b_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn2b_branch2b"
+	type: "BatchNorm"
+	bottom: "res2b_branch2b"
+	top: "res2b_branch2b_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn2b_branch2b"
+	type: "Concat"
+	bottom: "res2b_branch2b_bns"
+	bottom: "res2b_branch2b_bnt"
+	top: "res2b_branch2b_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale2b_branch2b"
+	type: "Scale"
+	bottom: "res2b_branch2b_bn"
+	top: "res2b_branch2b_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res2b"
+	type: "Eltwise"
+	bottom: "res2a"
+	bottom: "res2b_branch2b_bn"
+	top: "res2b"
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "res2b_relu"
+	type: "ReLU"
+	bottom: "res2b"
+	top: "res2b"
+}
+
+layer{
+	name: "res3a_branch2a"
+	type: "Convolution"
+	bottom: "res2b"
+	top: "res3a_branch2a"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 128
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 2
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res3a_branch2a"
+	type: "Slice"
+	bottom: "res3a_branch2a"
+	top: "res3a_branch2a_source"
+	top: "res3a_branch2a_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn3a_branch2as1"
+	type: "MultiModalBatchNorm"
+	bottom: "res3a_branch2a_source"
+	bottom: "ws1"
+	top: "res3a_branch2a_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn3a_branch2as2"
+	type: "MultiModalBatchNorm"
+	bottom: "res3a_branch2a_source"
+	bottom: "ws2"
+	top: "res3a_branch2a_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn3a_branch2as3"
+	type: "MultiModalBatchNorm"
+	bottom: "res3a_branch2a_source"
+	bottom: "ws3"
+	top: "res3a_branch2a_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn3a_branch2a_sum_source"
+	type: "Eltwise"
+	bottom: "res3a_branch2a_bns1"
+	bottom: "res3a_branch2a_bns2"
+	bottom: "res3a_branch2a_bns3"
+	top: "res3a_branch2a_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn3a_branch2a"
+	type: "BatchNorm"
+	bottom: "res3a_branch2a_target"
+	top: "res3a_branch2a_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn3a_branch2a"
+	type: "BatchNorm"
+	bottom: "res3a_branch2a"
+	top: "res3a_branch2a_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn3a_branch2a"
+	type: "Concat"
+	bottom: "res3a_branch2a_bns"
+	bottom: "res3a_branch2a_bnt"
+	top: "res3a_branch2a_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale3a_branch2a"
+	type: "Scale"
+	bottom: "res3a_branch2a_bn"
+	top: "res3a_branch2a_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res3a_branch2a_relu"
+	type: "ReLU"
+	bottom: "res3a_branch2a_bn"
+	top: "res3a_branch2a_bn"
+}
+
+layer{
+	name: "res3a_branch2b"
+	type: "Convolution"
+	bottom: "res3a_branch2a_bn"
+	top: "res3a_branch2b"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 128
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 1
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res3a_branch2b"
+	type: "Slice"
+	bottom: "res3a_branch2b"
+	top: "res3a_branch2b_source"
+	top: "res3a_branch2b_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn3a_branch2bs1"
+	type: "MultiModalBatchNorm"
+	bottom: "res3a_branch2b_source"
+	bottom: "ws1"
+	top: "res3a_branch2b_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn3a_branch2bs2"
+	type: "MultiModalBatchNorm"
+	bottom: "res3a_branch2b_source"
+	bottom: "ws2"
+	top: "res3a_branch2b_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn3a_branch2bs3"
+	type: "MultiModalBatchNorm"
+	bottom: "res3a_branch2b_source"
+	bottom: "ws3"
+	top: "res3a_branch2b_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn3a_branch2b_sum_source"
+	type: "Eltwise"
+	bottom: "res3a_branch2b_bns1"
+	bottom: "res3a_branch2b_bns2"
+	bottom: "res3a_branch2b_bns3"
+	top: "res3a_branch2b_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn3a_branch2b"
+	type: "BatchNorm"
+	bottom: "res3a_branch2b_target"
+	top: "res3a_branch2b_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn3a_branch2b"
+	type: "BatchNorm"
+	bottom: "res3a_branch2b"
+	top: "res3a_branch2b_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn3a_branch2b"
+	type: "Concat"
+	bottom: "res3a_branch2b_bns"
+	bottom: "res3a_branch2b_bnt"
+	top: "res3a_branch2b_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale3a_branch2b"
+	type: "Scale"
+	bottom: "res3a_branch2b_bn"
+	top: "res3a_branch2b_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res3a_branch1"
+	type: "Convolution"
+	bottom: "res2b"
+	top: "res3a_branch1"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 128
+		bias_term: false
+		pad: 0
+		kernel_size: 1
+		stride: 2
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res3a_branch1"
+	type: "Slice"
+	bottom: "res3a_branch1"
+	top: "res3a_branch1_source"
+	top: "res3a_branch1_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn3a_branch1s1"
+	type: "MultiModalBatchNorm"
+	bottom: "res3a_branch1_source"
+	bottom: "ws1"
+	top: "res3a_branch1_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn3a_branch1s2"
+	type: "MultiModalBatchNorm"
+	bottom: "res3a_branch1_source"
+	bottom: "ws2"
+	top: "res3a_branch1_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn3a_branch1s3"
+	type: "MultiModalBatchNorm"
+	bottom: "res3a_branch1_source"
+	bottom: "ws3"
+	top: "res3a_branch1_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn3a_branch1_sum_source"
+	type: "Eltwise"
+	bottom: "res3a_branch1_bns1"
+	bottom: "res3a_branch1_bns2"
+	bottom: "res3a_branch1_bns3"
+	top: "res3a_branch1_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn3a_branch1"
+	type: "BatchNorm"
+	bottom: "res3a_branch1_target"
+	top: "res3a_branch1_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn3a_branch1"
+	type: "BatchNorm"
+	bottom: "res3a_branch1"
+	top: "res3a_branch1_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn3a_branch1"
+	type: "Concat"
+	bottom: "res3a_branch1_bns"
+	bottom: "res3a_branch1_bnt"
+	top: "res3a_branch1_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale3a_branch1"
+	type: "Scale"
+	bottom: "res3a_branch1_bn"
+	top: "res3a_branch1_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res3a"
+	type: "Eltwise"
+	bottom: "res3a_branch2b_bn"
+	bottom: "res3a_branch1_bn"
+	top: "res3a"
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "res3a_relu"
+	type: "ReLU"
+	bottom: "res3a"
+	top: "res3a"
+}
+
+layer{
+	name: "res3b_branch2a"
+	type: "Convolution"
+	bottom: "res3a"
+	top: "res3b_branch2a"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 128
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 1
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res3b_branch2a"
+	type: "Slice"
+	bottom: "res3b_branch2a"
+	top: "res3b_branch2a_source"
+	top: "res3b_branch2a_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn3b_branch2as1"
+	type: "MultiModalBatchNorm"
+	bottom: "res3b_branch2a_source"
+	bottom: "ws1"
+	top: "res3b_branch2a_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn3b_branch2as2"
+	type: "MultiModalBatchNorm"
+	bottom: "res3b_branch2a_source"
+	bottom: "ws2"
+	top: "res3b_branch2a_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn3b_branch2as3"
+	type: "MultiModalBatchNorm"
+	bottom: "res3b_branch2a_source"
+	bottom: "ws3"
+	top: "res3b_branch2a_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn3b_branch2a_sum_source"
+	type: "Eltwise"
+	bottom: "res3b_branch2a_bns1"
+	bottom: "res3b_branch2a_bns2"
+	bottom: "res3b_branch2a_bns3"
+	top: "res3b_branch2a_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn3b_branch2a"
+	type: "BatchNorm"
+	bottom: "res3b_branch2a_target"
+	top: "res3b_branch2a_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn3b_branch2a"
+	type: "BatchNorm"
+	bottom: "res3b_branch2a"
+	top: "res3b_branch2a_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn3b_branch2a"
+	type: "Concat"
+	bottom: "res3b_branch2a_bns"
+	bottom: "res3b_branch2a_bnt"
+	top: "res3b_branch2a_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale3b_branch2a"
+	type: "Scale"
+	bottom: "res3b_branch2a_bn"
+	top: "res3b_branch2a_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res3b_branch2a_relu"
+	type: "ReLU"
+	bottom: "res3b_branch2a_bn"
+	top: "res3b_branch2a_bn"
+}
+
+layer{
+	name: "res3b_branch2b"
+	type: "Convolution"
+	bottom: "res3b_branch2a_bn"
+	top: "res3b_branch2b"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 128
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 1
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res3b_branch2b"
+	type: "Slice"
+	bottom: "res3b_branch2b"
+	top: "res3b_branch2b_source"
+	top: "res3b_branch2b_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn3b_branch2bs1"
+	type: "MultiModalBatchNorm"
+	bottom: "res3b_branch2b_source"
+	bottom: "ws1"
+	top: "res3b_branch2b_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn3b_branch2bs2"
+	type: "MultiModalBatchNorm"
+	bottom: "res3b_branch2b_source"
+	bottom: "ws2"
+	top: "res3b_branch2b_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn3b_branch2bs3"
+	type: "MultiModalBatchNorm"
+	bottom: "res3b_branch2b_source"
+	bottom: "ws3"
+	top: "res3b_branch2b_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn3b_branch2b_sum_source"
+	type: "Eltwise"
+	bottom: "res3b_branch2b_bns1"
+	bottom: "res3b_branch2b_bns2"
+	bottom: "res3b_branch2b_bns3"
+	top: "res3b_branch2b_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn3b_branch2b"
+	type: "BatchNorm"
+	bottom: "res3b_branch2b_target"
+	top: "res3b_branch2b_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn3b_branch2b"
+	type: "BatchNorm"
+	bottom: "res3b_branch2b"
+	top: "res3b_branch2b_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn3b_branch2b"
+	type: "Concat"
+	bottom: "res3b_branch2b_bns"
+	bottom: "res3b_branch2b_bnt"
+	top: "res3b_branch2b_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale3b_branch2b"
+	type: "Scale"
+	bottom: "res3b_branch2b_bn"
+	top: "res3b_branch2b_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res3b"
+	type: "Eltwise"
+	bottom: "res3a"
+	bottom: "res3b_branch2b_bn"
+	top: "res3b"
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "res3b_relu"
+	type: "ReLU"
+	bottom: "res3b"
+	top: "res3b"
+}
+
+layer{
+	name: "res4a_branch2a"
+	type: "Convolution"
+	bottom: "res3b"
+	top: "res4a_branch2a"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 256
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 2
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res4a_branch2a"
+	type: "Slice"
+	bottom: "res4a_branch2a"
+	top: "res4a_branch2a_source"
+	top: "res4a_branch2a_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn4a_branch2as1"
+	type: "MultiModalBatchNorm"
+	bottom: "res4a_branch2a_source"
+	bottom: "ws1"
+	top: "res4a_branch2a_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn4a_branch2as2"
+	type: "MultiModalBatchNorm"
+	bottom: "res4a_branch2a_source"
+	bottom: "ws2"
+	top: "res4a_branch2a_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn4a_branch2as3"
+	type: "MultiModalBatchNorm"
+	bottom: "res4a_branch2a_source"
+	bottom: "ws3"
+	top: "res4a_branch2a_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn4a_branch2a_sum_source"
+	type: "Eltwise"
+	bottom: "res4a_branch2a_bns1"
+	bottom: "res4a_branch2a_bns2"
+	bottom: "res4a_branch2a_bns3"
+	top: "res4a_branch2a_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn4a_branch2a"
+	type: "BatchNorm"
+	bottom: "res4a_branch2a_target"
+	top: "res4a_branch2a_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn4a_branch2a"
+	type: "BatchNorm"
+	bottom: "res4a_branch2a"
+	top: "res4a_branch2a_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn4a_branch2a"
+	type: "Concat"
+	bottom: "res4a_branch2a_bns"
+	bottom: "res4a_branch2a_bnt"
+	top: "res4a_branch2a_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale4a_branch2a"
+	type: "Scale"
+	bottom: "res4a_branch2a_bn"
+	top: "res4a_branch2a_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res4a_branch2a_relu"
+	type: "ReLU"
+	bottom: "res4a_branch2a_bn"
+	top: "res4a_branch2a_bn"
+}
+
+layer{
+	name: "res4a_branch2b"
+	type: "Convolution"
+	bottom: "res4a_branch2a_bn"
+	top: "res4a_branch2b"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 256
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 1
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res4a_branch2b"
+	type: "Slice"
+	bottom: "res4a_branch2b"
+	top: "res4a_branch2b_source"
+	top: "res4a_branch2b_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn4a_branch2bs1"
+	type: "MultiModalBatchNorm"
+	bottom: "res4a_branch2b_source"
+	bottom: "ws1"
+	top: "res4a_branch2b_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn4a_branch2bs2"
+	type: "MultiModalBatchNorm"
+	bottom: "res4a_branch2b_source"
+	bottom: "ws2"
+	top: "res4a_branch2b_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn4a_branch2bs3"
+	type: "MultiModalBatchNorm"
+	bottom: "res4a_branch2b_source"
+	bottom: "ws3"
+	top: "res4a_branch2b_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn4a_branch2b_sum_source"
+	type: "Eltwise"
+	bottom: "res4a_branch2b_bns1"
+	bottom: "res4a_branch2b_bns2"
+	bottom: "res4a_branch2b_bns3"
+	top: "res4a_branch2b_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn4a_branch2b"
+	type: "BatchNorm"
+	bottom: "res4a_branch2b_target"
+	top: "res4a_branch2b_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn4a_branch2b"
+	type: "BatchNorm"
+	bottom: "res4a_branch2b"
+	top: "res4a_branch2b_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn4a_branch2b"
+	type: "Concat"
+	bottom: "res4a_branch2b_bns"
+	bottom: "res4a_branch2b_bnt"
+	top: "res4a_branch2b_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale4a_branch2b"
+	type: "Scale"
+	bottom: "res4a_branch2b_bn"
+	top: "res4a_branch2b_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res4a_branch1"
+	type: "Convolution"
+	bottom: "res3b"
+	top: "res4a_branch1"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 256
+		bias_term: false
+		pad: 0
+		kernel_size: 1
+		stride: 2
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res4a_branch1"
+	type: "Slice"
+	bottom: "res4a_branch1"
+	top: "res4a_branch1_source"
+	top: "res4a_branch1_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn4a_branch1s1"
+	type: "MultiModalBatchNorm"
+	bottom: "res4a_branch1_source"
+	bottom: "ws1"
+	top: "res4a_branch1_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn4a_branch1s2"
+	type: "MultiModalBatchNorm"
+	bottom: "res4a_branch1_source"
+	bottom: "ws2"
+	top: "res4a_branch1_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn4a_branch1s3"
+	type: "MultiModalBatchNorm"
+	bottom: "res4a_branch1_source"
+	bottom: "ws3"
+	top: "res4a_branch1_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn4a_branch1_sum_source"
+	type: "Eltwise"
+	bottom: "res4a_branch1_bns1"
+	bottom: "res4a_branch1_bns2"
+	bottom: "res4a_branch1_bns3"
+	top: "res4a_branch1_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn4a_branch1"
+	type: "BatchNorm"
+	bottom: "res4a_branch1_target"
+	top: "res4a_branch1_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn4a_branch1"
+	type: "BatchNorm"
+	bottom: "res4a_branch1"
+	top: "res4a_branch1_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn4a_branch1"
+	type: "Concat"
+	bottom: "res4a_branch1_bns"
+	bottom: "res4a_branch1_bnt"
+	top: "res4a_branch1_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale4a_branch1"
+	type: "Scale"
+	bottom: "res4a_branch1_bn"
+	top: "res4a_branch1_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res4a"
+	type: "Eltwise"
+	bottom: "res4a_branch2b_bn"
+	bottom: "res4a_branch1_bn"
+	top: "res4a"
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "res4a_relu"
+	type: "ReLU"
+	bottom: "res4a"
+	top: "res4a"
+}
+
+layer{
+	name: "res4b_branch2a"
+	type: "Convolution"
+	bottom: "res4a"
+	top: "res4b_branch2a"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 256
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 1
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res4b_branch2a"
+	type: "Slice"
+	bottom: "res4b_branch2a"
+	top: "res4b_branch2a_source"
+	top: "res4b_branch2a_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn4b_branch2as1"
+	type: "MultiModalBatchNorm"
+	bottom: "res4b_branch2a_source"
+	bottom: "ws1"
+	top: "res4b_branch2a_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn4b_branch2as2"
+	type: "MultiModalBatchNorm"
+	bottom: "res4b_branch2a_source"
+	bottom: "ws2"
+	top: "res4b_branch2a_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn4b_branch2as3"
+	type: "MultiModalBatchNorm"
+	bottom: "res4b_branch2a_source"
+	bottom: "ws3"
+	top: "res4b_branch2a_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn4b_branch2a_sum_source"
+	type: "Eltwise"
+	bottom: "res4b_branch2a_bns1"
+	bottom: "res4b_branch2a_bns2"
+	bottom: "res4b_branch2a_bns3"
+	top: "res4b_branch2a_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn4b_branch2a"
+	type: "BatchNorm"
+	bottom: "res4b_branch2a_target"
+	top: "res4b_branch2a_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn4b_branch2a"
+	type: "BatchNorm"
+	bottom: "res4b_branch2a"
+	top: "res4b_branch2a_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn4b_branch2a"
+	type: "Concat"
+	bottom: "res4b_branch2a_bns"
+	bottom: "res4b_branch2a_bnt"
+	top: "res4b_branch2a_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale4b_branch2a"
+	type: "Scale"
+	bottom: "res4b_branch2a_bn"
+	top: "res4b_branch2a_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res4b_branch2a_relu"
+	type: "ReLU"
+	bottom: "res4b_branch2a_bn"
+	top: "res4b_branch2a_bn"
+}
+
+layer{
+	name: "res4b_branch2b"
+	type: "Convolution"
+	bottom: "res4b_branch2a_bn"
+	top: "res4b_branch2b"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 256
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 1
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res4b_branch2b"
+	type: "Slice"
+	bottom: "res4b_branch2b"
+	top: "res4b_branch2b_source"
+	top: "res4b_branch2b_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn4b_branch2bs1"
+	type: "MultiModalBatchNorm"
+	bottom: "res4b_branch2b_source"
+	bottom: "ws1"
+	top: "res4b_branch2b_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn4b_branch2bs2"
+	type: "MultiModalBatchNorm"
+	bottom: "res4b_branch2b_source"
+	bottom: "ws2"
+	top: "res4b_branch2b_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn4b_branch2bs3"
+	type: "MultiModalBatchNorm"
+	bottom: "res4b_branch2b_source"
+	bottom: "ws3"
+	top: "res4b_branch2b_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn4b_branch2b_sum_source"
+	type: "Eltwise"
+	bottom: "res4b_branch2b_bns1"
+	bottom: "res4b_branch2b_bns2"
+	bottom: "res4b_branch2b_bns3"
+	top: "res4b_branch2b_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn4b_branch2b"
+	type: "BatchNorm"
+	bottom: "res4b_branch2b_target"
+	top: "res4b_branch2b_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn4b_branch2b"
+	type: "BatchNorm"
+	bottom: "res4b_branch2b"
+	top: "res4b_branch2b_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn4b_branch2b"
+	type: "Concat"
+	bottom: "res4b_branch2b_bns"
+	bottom: "res4b_branch2b_bnt"
+	top: "res4b_branch2b_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale4b_branch2b"
+	type: "Scale"
+	bottom: "res4b_branch2b_bn"
+	top: "res4b_branch2b_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res4b"
+	type: "Eltwise"
+	bottom: "res4a"
+	bottom: "res4b_branch2b_bn"
+	top: "res4b"
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "res4b_relu"
+	type: "ReLU"
+	bottom: "res4b"
+	top: "res4b"
+}
+
+layer{
+	name: "res5a_branch2a"
+	type: "Convolution"
+	bottom: "res4b"
+	top: "res5a_branch2a"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 512
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 2
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res5a_branch2a"
+	type: "Slice"
+	bottom: "res5a_branch2a"
+	top: "res5a_branch2a_source"
+	top: "res5a_branch2a_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn5a_branch2as1"
+	type: "MultiModalBatchNorm"
+	bottom: "res5a_branch2a_source"
+	bottom: "ws1"
+	top: "res5a_branch2a_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn5a_branch2as2"
+	type: "MultiModalBatchNorm"
+	bottom: "res5a_branch2a_source"
+	bottom: "ws2"
+	top: "res5a_branch2a_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn5a_branch2as3"
+	type: "MultiModalBatchNorm"
+	bottom: "res5a_branch2a_source"
+	bottom: "ws3"
+	top: "res5a_branch2a_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn5a_branch2a_sum_source"
+	type: "Eltwise"
+	bottom: "res5a_branch2a_bns1"
+	bottom: "res5a_branch2a_bns2"
+	bottom: "res5a_branch2a_bns3"
+	top: "res5a_branch2a_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn5a_branch2a"
+	type: "BatchNorm"
+	bottom: "res5a_branch2a_target"
+	top: "res5a_branch2a_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn5a_branch2a"
+	type: "BatchNorm"
+	bottom: "res5a_branch2a"
+	top: "res5a_branch2a_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn5a_branch2a"
+	type: "Concat"
+	bottom: "res5a_branch2a_bns"
+	bottom: "res5a_branch2a_bnt"
+	top: "res5a_branch2a_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale5a_branch2a"
+	type: "Scale"
+	bottom: "res5a_branch2a_bn"
+	top: "res5a_branch2a_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res5a_branch2a_relu"
+	type: "ReLU"
+	bottom: "res5a_branch2a_bn"
+	top: "res5a_branch2a_bn"
+}
+
+layer{
+	name: "res5a_branch2b"
+	type: "Convolution"
+	bottom: "res5a_branch2a_bn"
+	top: "res5a_branch2b"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 512
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 1
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res5a_branch2b"
+	type: "Slice"
+	bottom: "res5a_branch2b"
+	top: "res5a_branch2b_source"
+	top: "res5a_branch2b_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn5a_branch2bs1"
+	type: "MultiModalBatchNorm"
+	bottom: "res5a_branch2b_source"
+	bottom: "ws1"
+	top: "res5a_branch2b_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn5a_branch2bs2"
+	type: "MultiModalBatchNorm"
+	bottom: "res5a_branch2b_source"
+	bottom: "ws2"
+	top: "res5a_branch2b_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn5a_branch2bs3"
+	type: "MultiModalBatchNorm"
+	bottom: "res5a_branch2b_source"
+	bottom: "ws3"
+	top: "res5a_branch2b_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn5a_branch2b_sum_source"
+	type: "Eltwise"
+	bottom: "res5a_branch2b_bns1"
+	bottom: "res5a_branch2b_bns2"
+	bottom: "res5a_branch2b_bns3"
+	top: "res5a_branch2b_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn5a_branch2b"
+	type: "BatchNorm"
+	bottom: "res5a_branch2b_target"
+	top: "res5a_branch2b_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn5a_branch2b"
+	type: "BatchNorm"
+	bottom: "res5a_branch2b"
+	top: "res5a_branch2b_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn5a_branch2b"
+	type: "Concat"
+	bottom: "res5a_branch2b_bns"
+	bottom: "res5a_branch2b_bnt"
+	top: "res5a_branch2b_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale5a_branch2b"
+	type: "Scale"
+	bottom: "res5a_branch2b_bn"
+	top: "res5a_branch2b_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res5a_branch1"
+	type: "Convolution"
+	bottom: "res4b"
+	top: "res5a_branch1"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 512
+		bias_term: false
+		pad: 0
+		kernel_size: 1
+		stride: 2
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res5a_branch1"
+	type: "Slice"
+	bottom: "res5a_branch1"
+	top: "res5a_branch1_source"
+	top: "res5a_branch1_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn5a_branch1s1"
+	type: "MultiModalBatchNorm"
+	bottom: "res5a_branch1_source"
+	bottom: "ws1"
+	top: "res5a_branch1_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn5a_branch1s2"
+	type: "MultiModalBatchNorm"
+	bottom: "res5a_branch1_source"
+	bottom: "ws2"
+	top: "res5a_branch1_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn5a_branch1s3"
+	type: "MultiModalBatchNorm"
+	bottom: "res5a_branch1_source"
+	bottom: "ws3"
+	top: "res5a_branch1_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn5a_branch1_sum_source"
+	type: "Eltwise"
+	bottom: "res5a_branch1_bns1"
+	bottom: "res5a_branch1_bns2"
+	bottom: "res5a_branch1_bns3"
+	top: "res5a_branch1_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn5a_branch1"
+	type: "BatchNorm"
+	bottom: "res5a_branch1_target"
+	top: "res5a_branch1_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn5a_branch1"
+	type: "BatchNorm"
+	bottom: "res5a_branch1"
+	top: "res5a_branch1_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn5a_branch1"
+	type: "Concat"
+	bottom: "res5a_branch1_bns"
+	bottom: "res5a_branch1_bnt"
+	top: "res5a_branch1_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale5a_branch1"
+	type: "Scale"
+	bottom: "res5a_branch1_bn"
+	top: "res5a_branch1_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res5a"
+	type: "Eltwise"
+	bottom: "res5a_branch2b_bn"
+	bottom: "res5a_branch1_bn"
+	top: "res5a"
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "res5a_relu"
+	type: "ReLU"
+	bottom: "res5a"
+	top: "res5a"
+}
+
+layer{
+	name: "res5b_branch2a"
+	type: "Convolution"
+	bottom: "res5a"
+	top: "res5b_branch2a"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 512
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 1
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res5b_branch2a"
+	type: "Slice"
+	bottom: "res5b_branch2a"
+	top: "res5b_branch2a_source"
+	top: "res5b_branch2a_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn5b_branch2as1"
+	type: "MultiModalBatchNorm"
+	bottom: "res5b_branch2a_source"
+	bottom: "ws1"
+	top: "res5b_branch2a_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn5b_branch2as2"
+	type: "MultiModalBatchNorm"
+	bottom: "res5b_branch2a_source"
+	bottom: "ws2"
+	top: "res5b_branch2a_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn5b_branch2as3"
+	type: "MultiModalBatchNorm"
+	bottom: "res5b_branch2a_source"
+	bottom: "ws3"
+	top: "res5b_branch2a_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn5b_branch2a_sum_source"
+	type: "Eltwise"
+	bottom: "res5b_branch2a_bns1"
+	bottom: "res5b_branch2a_bns2"
+	bottom: "res5b_branch2a_bns3"
+	top: "res5b_branch2a_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn5b_branch2a"
+	type: "BatchNorm"
+	bottom: "res5b_branch2a_target"
+	top: "res5b_branch2a_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn5b_branch2a"
+	type: "BatchNorm"
+	bottom: "res5b_branch2a"
+	top: "res5b_branch2a_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn5b_branch2a"
+	type: "Concat"
+	bottom: "res5b_branch2a_bns"
+	bottom: "res5b_branch2a_bnt"
+	top: "res5b_branch2a_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale5b_branch2a"
+	type: "Scale"
+	bottom: "res5b_branch2a_bn"
+	top: "res5b_branch2a_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res5b_branch2a_relu"
+	type: "ReLU"
+	bottom: "res5b_branch2a_bn"
+	top: "res5b_branch2a_bn"
+}
+
+layer{
+	name: "res5b_branch2b"
+	type: "Convolution"
+	bottom: "res5b_branch2a_bn"
+	top: "res5b_branch2b"
+	param {
+		lr_mult: 1.0
+		decay_mult: 1.0
+ 	}
+	convolution_param {
+		num_output: 512
+		bias_term: false
+		pad: 1
+		kernel_size: 3
+		stride: 1
+			weight_filler {
+      	type: "msra"
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_res5b_branch2b"
+	type: "Slice"
+	bottom: "res5b_branch2b"
+	top: "res5b_branch2b_source"
+	top: "res5b_branch2b_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "wbn5b_branch2bs1"
+	type: "MultiModalBatchNorm"
+	bottom: "res5b_branch2b_source"
+	bottom: "ws1"
+	top: "res5b_branch2b_bns1"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn5b_branch2bs2"
+	type: "MultiModalBatchNorm"
+	bottom: "res5b_branch2b_source"
+	bottom: "ws2"
+	top: "res5b_branch2b_bns2"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn5b_branch2bs3"
+	type: "MultiModalBatchNorm"
+	bottom: "res5b_branch2b_source"
+	bottom: "ws3"
+	top: "res5b_branch2b_bns3"
+	include {
+			phase: TRAIN
+	}
+	multimodal_batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+	}
+}
+
+layer{
+	name: "wbn5b_branch2b_sum_source"
+	type: "Eltwise"
+	bottom: "res5b_branch2b_bns1"
+	bottom: "res5b_branch2b_bns2"
+	bottom: "res5b_branch2b_bns3"
+	top: "res5b_branch2b_bns"
+	include {
+		phase: TRAIN
+	}
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "bnt_wbn5b_branch2b"
+	type: "BatchNorm"
+	bottom: "res5b_branch2b_target"
+	top: "res5b_branch2b_bnt"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TRAIN
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "bnt_wbn5b_branch2b"
+	type: "BatchNorm"
+	bottom: "res5b_branch2b"
+	top: "res5b_branch2b_bn"
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	param {
+		lr_mult: 0.0
+ 	}
+	include {
+		phase: TEST
+	}
+	batch_norm_param {
+		moving_average_fraction: 0.95
+		eps: 1e-05
+  	}
+}
+
+layer{
+	name: "concat_wbn5b_branch2b"
+	type: "Concat"
+	bottom: "res5b_branch2b_bns"
+	bottom: "res5b_branch2b_bnt"
+	top: "res5b_branch2b_bn"
+	include {
+		phase: TRAIN
+	}
+	concat_param {
+		axis: 0
+  	}
+}
+
+layer{
+	name: "scale5b_branch2b"
+	type: "Scale"
+	bottom: "res5b_branch2b_bn"
+	top: "res5b_branch2b_bn"
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	param {
+		lr_mult: 1.0
+		decay_mult: 0.0
+ 	}
+	scale_param {
+		filler {
+      	type: "constant"
+      			value: 1
+   		}
+    		bias_filler {
+      	type: "constant"
+      			value: 0
+    		}
+		axis: 1
+    		num_axes: 1
+   		bias_term: true
+  	}
+}
+
+layer{
+	name: "res5b"
+	type: "Eltwise"
+	bottom: "res5a"
+	bottom: "res5b_branch2b_bn"
+	top: "res5b"
+	eltwise_param {
+		operation:SUM
+		coeff: 1
+		coeff: 1
+  	}
+}
+
+layer{
+	name: "res5b_relu"
+	type: "ReLU"
+	bottom: "res5b"
+	top: "res5b"
+}
+
+layer{
+	name: "glb_pool"
+	type: "Pooling"
+	bottom: "res5b"
+	top: "glb_pool"
+	pooling_param {
+		pool: AVE
+		global_pooling: true
+    	}
+}
+
+layer{
+	name: "classifier"
+	type: "InnerProduct"
+	bottom: "glb_pool"
+	top: "scorer"
+	param {
+		name: "wclassifier"
+		lr_mult: 10.0
+		decay_mult: 1.0
+ 	}
+        param {
+		lr_mult: 20.0
+		decay_mult: 1.0
+ 	}
+	inner_product_param {
+		num_output: %CLASSES%
+		weight_filler {
+      	type: "gaussian"
+      			std: 0.01
+    		}
+		bias_filler {
+      	type: "constant"
+      			value: 0.0
+    		}
+  	}
+}
+
+layer{
+	name: "slicer_score"
+	type: "Slice"
+	bottom: "scorer"
+	top: "score_source"
+	top: "score_target"
+	include {
+		phase: TRAIN
+	}
+	slice_param {
+		axis: 0
+		slice_point: %SLICE_POINT%
+	}
+}
+
+layer{
+	name: "loss"
+	type: "SoftmaxWithLoss"
+	bottom: "score_source"
+	bottom: "labels"
+	top: "loss"
+	loss_weight: 1
+	include {
+		phase: TRAIN
+	}
+}
+
+layer{
+	name: "entropy"
+	type: "EntropyLoss"
+	bottom: "score_target"
+	top: "entropy"
+	loss_weight: %ENTROPY_WEIGHT%
+	include {
+		phase: TRAIN
+	}
+}
+
+layer{
+	name: "accuracy"
+	type: "Accuracy"
+	bottom: "scorer"
+	bottom: "labels"
+	top: "accuracy"
+	include {
+		phase: TEST
+	}
+}
+
