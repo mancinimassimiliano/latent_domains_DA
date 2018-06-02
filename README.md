@@ -1,11 +1,15 @@
+# Implementation of Boosting Domain Adaptation by Discovering Latent Domains
+
 This is the official Caffe implementation of [Boosting Domain Adaptation by Discovering Latent Domains](http://research.mapillary.com/img/publications/CVPR18b.pdf). 
 
 This code is forked from [BVLC/caffe](https://github.com/BVLC/caffe). For any issue not directly related to our additional layers, please refer to the upstream repository.
 
 ## Additional layers
+
 In this Caffe version, two additional layers are provided:
 
 ### MultiModalBatchNormLayer
+
 Allows to perform a weighted normalization with respect to one domain.
 Differently form standard BatchNormLayer it takes one more input, which is a weight vector of dimension equal to the batch size. This vector represents the probability that each sample belongs to the domain represented by this MultiModalBatchNormLayer. As an example, the syntax is the following: 
 	
@@ -48,8 +52,8 @@ In case we have 2 latent domains, the full mDA layer would be:
 
 Since the output of a MultiModalBatchNormLayer for each sample is already scaled for its probability, the final layer is a simple element-wise sum.
 
+### EntropyLossLayer 
 
-###EntropyLossLayer 
 A simple entropy loss implementation with integrated softmax computation. We used the implementation of [AutoDIAL](https://github.com/ducksoup/autodial/).
 
 ## Networks and solvers
