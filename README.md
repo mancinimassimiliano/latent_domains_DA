@@ -1,4 +1,9 @@
-## NEWS: A PyTorch version of the Weighted Batch Norm Layers is available. Checkout: https://github.com/mancinimassimiliano/pytorch_wbn
+### NEWS: 
+A PyTorch version of the Weighted Batch Norm layers is available. Checkout: https://github.com/mancinimassimiliano/pytorch_wbn
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------
+
 
 This is the official Caffe implementation of [Boosting Domain Adaptation by Discovering Latent Domains](http://research.mapillary.com/img/publications/CVPR18b.pdf). 
 
