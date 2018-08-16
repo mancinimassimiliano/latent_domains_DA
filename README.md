@@ -1,3 +1,5 @@
+## NEWS: A PyTorch version of the Weighted Batch Norm Layers is available. Checkout: https://github.com/mancinimassimiliano/pytorch_wbn
+
 This is the official Caffe implementation of [Boosting Domain Adaptation by Discovering Latent Domains](http://research.mapillary.com/img/publications/CVPR18b.pdf). 
 
 This code is forked from [BVLC/caffe](https://github.com/BVLC/caffe). For any issue not directly related to our additional layers, please refer to the upstream repository.
@@ -72,7 +74,7 @@ Notice that each of these files have some fields delimited by `%` which must be 
 Current Domain Adaptation (DA) methods based on deep architectures assume that the source samples arise from a single distribution. However, in practice most datasets can be regarded as mixtures of multiple domains. In these cases exploiting single-source DA methods for learning target classifiers may lead to sub-optimal, if not poor, results. In addition, in many applications it is difficult to manually provide the domain labels for all source data points, i.e. latent domains should be automatically discovered. This paper introduces a novel Convolutional Neural Network (CNN) architecture which (i) automatically discovers latent domains in visual datasets and (ii) exploits this information to learn robust target classifiers. Our approach is based on the introduction of two main components, which can be embedded into any existing CNN architecture: (i) a side branch that automatically computes the assignment of a source sample to a latent domain and (ii) novel layers that exploit domain membership information to appropriately align the distribution of the CNN internal feature representations to a reference distribution. We test our approach on publicly-available datasets, showing that it outperforms state-of-the-art multi-source DA methods by a large margin.
 
     @inProceedings{mancini2018boosting,
-  	author = {Mancini, Massimilano and Porzi, Lorenzo and Rota Bul\`o, Samuel and Caputo, Barbara and Ricci, Elisa},
+	author = {Mancini, Massimilano and Porzi, Lorenzo and Rota Bul\`o, Samuel and Caputo, Barbara and Ricci, Elisa},
   	title  = {Boosting Domain Adaptation by Discovering Latent Domains},
   	booktitle = {Computer Vision and Pattern Recognition (CVPR)},
   	year      = {2018},
