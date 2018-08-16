@@ -1,5 +1,5 @@
 ## NEWS: 
-###A PyTorch version of the Weighted Batch Norm layers is available. Checkout: https://github.com/mancinimassimiliano/pytorch_wbn
+### A PyTorch version of the Weighted Batch Norm layers is available. Checkout: https://github.com/mancinimassimiliano/pytorch_wbn
 
 
 -----------------------------------------------------------------------------------------------------------------------------------------------
