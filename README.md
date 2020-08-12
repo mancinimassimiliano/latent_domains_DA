@@ -63,7 +63,7 @@ A simple entropy loss implementation with integrated softmax computation. We use
 ## Networks and solvers
 Under models/latentDA we provide prototxts and solvers for the experiments reported in the paper. In particular the folder contains:
 
-* `resnet18_k2.prototxt` : the ResNet architecture used for the PACS experiments, with 2 latent domains.
+* `resnet18_k3.prototxt` : the ResNet architecture used for the PACS experiments, with 3 latent domains.
 * `alexnet_k2.prototxt` : the AlexNet architecture used for the Office31 experiments, with 2 latent domains.
 * `alexnet_sourcek2_targetk2`.prototxt : the AlexNet architecture used for the Office-Caltech experiments in the multi-target scenario, with 2 latent domains for both source and target.
 * `alexnet_k3.prototxt` : the AlexNet architecture used for the Office-Caltech experiments in the multi-target scenario, with 3 latent domains.
